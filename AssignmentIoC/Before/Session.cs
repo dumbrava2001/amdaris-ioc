@@ -1,4 +1,4 @@
-﻿namespace AssignmentIoC
+﻿namespace AssignmentIoC.Before
 {
     /// <summary>
     /// Represents a single conference session

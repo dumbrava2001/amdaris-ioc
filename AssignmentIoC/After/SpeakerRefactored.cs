@@ -1,6 +1,5 @@
-﻿namespace AssignmentIoC;
+﻿namespace AssignmentIoC.After;
 
 public class SpeakerRefactored
 {
-    
 }

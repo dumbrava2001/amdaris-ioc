@@ -1,4 +1,4 @@
-﻿namespace AssignmentIoC
+﻿namespace AssignmentIoC.Before
 {
     public interface IRepository
     {
