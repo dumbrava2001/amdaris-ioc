@@ -1,4 +1,4 @@
-﻿namespace AssignmentIoC.After;
+﻿namespace AssignmentIoC.After.Exceptions;
 
 public class SpeakerDoesntMeetRequirementsException : Exception
 {
