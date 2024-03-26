@@ -1,6 +1,6 @@
 ﻿namespace AssignmentIoC.After.Repositories;
 
-public class ISpeakerRepository
+public interface ISpeakerRepository
 {
-    
+    Speaker Save(Speaker speaker);
 }

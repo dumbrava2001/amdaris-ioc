@@ -2,5 +2,5 @@
 
 public interface ISpeakerService
 {
-    int RegisterSpeaker(Speaker speaker);
+    Guid RegisterSpeaker(Speaker speaker);
 }

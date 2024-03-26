@@ -6,97 +6,40 @@ namespace AssignmentIoC.After.Services.Implementations;
 
 public class SpeakerService : ISpeakerService
 {
+    private const int NecessaryYearsOfExperience = 10;
+    private const int NecessaryCertificationsCount = 3;
+    private const int NecessaryApprovedSessionsOffset = 0;
+
     private readonly ISpeakerRepository _speakerRepository;
-    private readonly int _necessaryYearsOfExperience;
-    private readonly int _necessaryCertificationsCount;
     private readonly IDomainService _domainService;
     private readonly IEmployerService _employerService;
+    private readonly ISessionService _sessionService;
+    private readonly IFeeService _feeService;
 
-    public SpeakerService(ISpeakerRepository speakerRepository, int necessaryCertificationsCount,
-        int necessaryYearsOfExperience, IDomainService domainService, IEmployerService employerService)
+    public SpeakerService(ISpeakerRepository speakerRepository,
+        IDomainService domainService, IEmployerService employerService,
+        ISessionService sessionService, IFeeService feeService)
     {
         _speakerRepository = speakerRepository;
-        _necessaryCertificationsCount = necessaryCertificationsCount;
-        _necessaryYearsOfExperience = necessaryYearsOfExperience;
         _domainService = domainService;
         _employerService = employerService;
+        _sessionService = sessionService;
+        _feeService = feeService;
     }
 
-    /// <summary>
-    /// Register a speaker
-    /// </summary>
-    /// <returns>speakerID</returns>
-    public int RegisterSpeaker(Speaker speaker)
+    public Guid RegisterSpeaker(Speaker speaker)
     {
-        //lets init some vars
-        int? speakerId = null;
-        bool appr = false;
-        var ot = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
-
         CheckSpeakerDataIntegrity(speaker);
         CheckIfSpeakerMeetsGeneralRequirements(speaker);
-        
-        foreach (var session in Sessions)
-        {
-            foreach (var tech in ot)
-            {
-                if (session.Title.Contains(tech) || session.Description.Contains(tech))
-                {
-                    session.Approved = false;
-                    break;
-                }
+        _sessionService.ApproveRegisteredSpeakerSession(speaker.Sessions);
+        CheckSpeakerApprovedSessionRequirements(speaker.Sessions);
 
-                session.Approved = true;
-                appr = true;
-            }
-        }
+        speaker.RegistrationFee = _feeService.GetSpeakerRegistrationFee(speaker);
 
-        if (appr)
-        {
-            //if we got this far, the speaker is approved
-            //let's go ahead and register him/her now.
-            //First, let's calculate the registration fee. 
-            //More experienced speakers pay a lower fee.
-            if (YearsOfExperience <= 1)
-            {
-                RegistrationFee = 500;
-            }
-            else if (YearsOfExperience >= 2 && YearsOfExperience <= 3)
-            {
-                RegistrationFee = 250;
-            }
-            else if (YearsOfExperience >= 4 && YearsOfExperience <= 5)
-            {
-                RegistrationFee = 100;
-            }
-            else if (YearsOfExperience >= 6 && YearsOfExperience <= 9)
-            {
-                RegistrationFee = 50;
-            }
-            else
-            {
-                RegistrationFee = 0;
-            }
+        // TODO to add using statement when used with dbContext ?
+        var savedSpeaker = _speakerRepository.Save(speaker);
 
-
-            //Now, save the speaker and sessions to the db.
-            try
-            {
-                speakerId = repository.SaveSpeaker(this);
-            }
-            catch (Exception e)
-            {
-                //in case the db call fails 
-            }
-        }
-        else
-        {
-            throw new NoSessionsApprovedException("No sessions approved.");
-        }
-
-
-        //if we got this far, the speaker is registered.
-        return speakerId;
+        return savedSpeaker.Id;
     }
 
     private void CheckSpeakerDataIntegrity(Speaker speaker)
@@ -119,8 +62,8 @@ public class SpeakerService : ISpeakerService
 
     private void CheckIfSpeakerMeetsGeneralRequirements(Speaker speaker)
     {
-        var generalRequirements = speaker.YearsOfExperience > _necessaryYearsOfExperience || speaker.HasBlog ||
-                                  speaker.Certifications.Count > _necessaryCertificationsCount ||
+        var generalRequirements = speaker.YearsOfExperience > NecessaryYearsOfExperience || speaker.HasBlog ||
+                                  speaker.Certifications.Count > NecessaryCertificationsCount ||
                                   _employerService.Contains(speaker.Employer);
 
         var speakerEmailDomain = speaker.Email.Split("@").Last();
@@ -130,12 +73,21 @@ public class SpeakerService : ISpeakerService
         if (!(generalRequirements && technicalRequirements))
         {
             throw new SpeakerDoesntMeetRequirementsException(
-                "Speaker doesn't meet our abitrary and capricious standards.");
+                "Speaker doesn't meet general requirements.");
         }
 
         if (speaker.Sessions.Count == 0)
         {
-            throw new ArgumentException("Can't register speaker with no sessions to present.");
+            throw new ArgumentException("Can't register speaker with no sessions.");
+        }
+    }
+
+    private void CheckSpeakerApprovedSessionRequirements(IEnumerable<Session> sessionList)
+    {
+        var numberOfApprovedSessions = sessionList.Count(s => s.Approved);
+        if (numberOfApprovedSessions <= NecessaryApprovedSessionsOffset)
+        {
+            throw new NoSessionsApprovedException("No sessions approved.");
         }
     }
 }
