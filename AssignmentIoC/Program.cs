@@ -1,2 +1,7 @@
 ﻿
-Console.WriteLine("Hello, World!");
+internal static class Program
+{
+    public static void Main(string[] args)
+    {
+    }
+}
