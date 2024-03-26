@@ -18,7 +18,11 @@
 1. SRP (nesting classes)
 2. OCP (hardcoded lists)
 3. KISS
+4. DRY
 
 ## What refactoring techniques did you use?
 
 1. Extracting behaviour and reduce complexity by creating individual separated classes
+2. Separation of concerns by creating class services for individual subdomain
+3. Using repositories to save critical data (domain, employers) for using in CRUD operations
+4. Extracting small chunks of logic into smaller methods
